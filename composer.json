@@ -21,7 +21,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "rpkamp\\": "tests/"
+            "rpkamp\\": "tests/",
+            "": "example/"
         }
     },
     "require-dev": {
