@@ -16,6 +16,8 @@ A fancy testdox printer for PHPUnit. Output is similar to PHPUnit's `--testdox` 
 | ☢ | yellow | risky test |
 | → | yellow | skipped test |
 
+When less than 70% of the tests fail it will show a summary of errors at the end of the output. 70% is a guess and may change in the future, but it seemed like a nice cut off point that you have so much noise in the output already you don't need any more noise. (this was introduced in version 0.2.0)
+
 ## Installation
 On the command line run
 

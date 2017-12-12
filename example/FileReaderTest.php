@@ -55,4 +55,13 @@ class FileReaderTest extends TestCase
     {
         $this->markTestSkipped('No suitable utf8 encoder available');
     }
+
+    /**
+     * @test
+     * @dataProvider doesNotExist
+     */
+    public function it_should_do_multiple_things($foo)
+    {
+
+    }
 }

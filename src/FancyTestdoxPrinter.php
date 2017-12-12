@@ -3,6 +3,8 @@
 namespace rpkamp;
 
 use Exception;
+use rpkamp\FancyTestdoxPrinter\Colorizer;
+use rpkamp\FancyTestdoxPrinter\TestResult as FancyTestResult;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\TestResult;
 use PHPUnit\Framework\Warning;
@@ -15,39 +17,29 @@ use PHPUnit\Util\TestDox\NamePrettifier;
 class FancyTestdoxPrinter extends ResultPrinter
 {
     /**
-     * @var string
+     * @var FancyTestResult
      */
-    private $currentTestName;
+    private $currentTestResult;
 
     /**
-     * @var string|null
+     * @var FancyTestResult[]
      */
-    private $currentTestSymbol;
-
-    /**
-     * @var string|null
-     */
-    private $currentClassNameUnderTest;
-
-    /**
-     * @var string
-     */
-    private $currentTestResultAdditionalInformation;
+    private $nonSuccessfulTestResults = [];
 
     /**
      * @var NamePrettifier
      */
     private $prettifier;
 
-    const COLOR_RED = 'red';
-    const COLOR_GREEN = 'green';
-    const COLOR_YELLOW = 'yellow';
+    /**
+     * @var Colorizer
+     */
+    private $colorizer;
 
-    const ANSI_COLORS = [
-        self::COLOR_RED => 31,
-        self::COLOR_GREEN => 32,
-        self::COLOR_YELLOW => 33,
-    ];
+    /**
+     * @var string|null
+     */
+    private $previousClassUnderTest;
 
     public function __construct(
         $out = null,
@@ -57,27 +49,30 @@ class FancyTestdoxPrinter extends ResultPrinter
         $numberOfColumns = 80,
         $reverse = false
     ) {
-        $this->prettifier = new NamePrettifier();
         parent::__construct($out, $verbose, $colors, $debug, $numberOfColumns, $reverse);
+
+        $this->prettifier = new NamePrettifier();
+        $this->colorizer = new Colorizer($this->colors);
     }
 
     public function startTest(Test $test)
     {
+        $this->previousClassUnderTest = $this->currentTestResult
+            ? $this->currentTestResult->getClassUnderTest()
+            : null;
+
         $className = $this->prettifier->prettifyTestClass(get_class($test));
-        if ($className !== $this->currentClassNameUnderTest) {
-            if (null !== $this->currentClassNameUnderTest) {
-                $this->write("\n");
-            }
-            $this->write(sprintf("%s\n", $className));
-            $this->currentClassNameUnderTest = $className;
-        }
 
+        $testName = '';
         if ($test instanceof TestCase || $test instanceof PhptTestCase) {
-            $this->currentTestName = $this->prettifier->prettifyTestMethod($test->getName());
+            $testName = $this->prettifier->prettifyTestMethod($test->getName());
         }
 
-        $this->currentTestSymbol = $this->colorize('✔', self::COLOR_GREEN);
-        $this->currentTestResultAdditionalInformation = null;
+        $this->currentTestResult = new FancyTestResult(
+            $this->colorizer,
+            $className,
+            $testName
+        );
 
         parent::startTest($test);
     }
@@ -90,81 +85,64 @@ class FancyTestdoxPrinter extends ResultPrinter
             return;
         }
 
-        if ($time > 5) {
-            $timeString = $this->colorize(sprintf('[%.2f ms]', $time * 1000), self::COLOR_RED);
-        } elseif ($time > 1) {
-            $timeString = $this->colorize(sprintf('[%.2f ms]', $time * 1000), self::COLOR_YELLOW);
-        } else {
-            $timeString = sprintf('[%.2f ms]', $time * 1000);
+        $this->currentTestResult->setRuntime($time);
+
+        if (!$this->currentTestResult->isTestSuccessful()) {
+            $this->nonSuccessfulTestResults[] = $this->currentTestResult;
         }
 
-        $additionalInformation = '';
-        if (null !== $this->currentTestResultAdditionalInformation) {
-            $lines = explode("\n", $this->currentTestResultAdditionalInformation);
-            
-            $additionalInformation = sprintf(
-                "   │\n%s\n\n",
-                implode(
-                    "\n",
-                    array_map(
-                        function (string $text) {
-                            return sprintf('   │ %s', $text);
-                        },
-                        $lines
-                    )
-                )
-            );
-        }
-
-        $this->write(sprintf(
-            " %s %s %s\n%s",
-            $this->currentTestSymbol,
-            $this->currentTestName,
-            $timeString,
-            $additionalInformation
-        ));
+        $this->write($this->currentTestResult->toString($this->previousClassUnderTest, $this->verbose));
     }
 
     public function addError(Test $test, Exception $e, $time)
     {
-        $this->currentTestSymbol = $this->colorize('✘', self::COLOR_YELLOW);
-        $this->currentTestResultAdditionalInformation = (string) $e;
+        $this->currentTestResult->fail(
+            $this->colorizer->colorize('✘', Colorizer::COLOR_YELLOW),
+            (string) $e
+        );
     }
 
     public function addWarning(Test $test, Warning $e, $time)
     {
-        $this->currentTestSymbol = $this->colorize('✘', self::COLOR_YELLOW);
-        $this->currentTestResultAdditionalInformation = (string) $e;
+        $this->currentTestResult->fail(
+            $this->colorizer->colorize('✘', Colorizer::COLOR_YELLOW),
+            (string) $e
+        );
     }
 
     public function addFailure(Test $test, AssertionFailedError $e, $time)
     {
-        $this->currentTestSymbol = $this->colorize('✘', self::COLOR_RED);
-        $this->currentTestResultAdditionalInformation = (string) $e;
+        $this->currentTestResult->fail(
+            $this->colorizer->colorize('✘', Colorizer::COLOR_RED),
+            (string) $e
+        );
     }
 
     public function addIncompleteTest(Test $test, Exception $e, $time)
     {
-        $this->currentTestSymbol = $this->colorize('∅', self::COLOR_YELLOW);
-        if ($this->verbose) {
-            $this->currentTestResultAdditionalInformation = (string) $e;
-        }
+        $this->currentTestResult->fail(
+            $this->colorizer->colorize('∅', Colorizer::COLOR_YELLOW),
+            (string) $e,
+            true
+        );
     }
 
     public function addRiskyTest(Test $test, Exception $e, $time)
     {
-        $this->currentTestSymbol = $this->colorize('☢', self::COLOR_YELLOW);
-        if ($this->verbose) {
-            $this->currentTestResultAdditionalInformation = (string) $e;
-        }
+        $this->currentTestResult->fail(
+            $this->colorizer->colorize('☢', Colorizer::COLOR_YELLOW),
+            (string) $e,
+            true
+        );
     }
 
     public function addSkippedTest(Test $test, Exception $e, $time)
     {
-        $this->currentTestSymbol = $this->colorize('→', self::COLOR_YELLOW);
-        if ($this->verbose) {
-            $this->currentTestResultAdditionalInformation = (string) $e;
-        }
+        $this->currentTestResult->fail(
+            $this->colorizer->colorize('→', Colorizer::COLOR_YELLOW),
+            (string) $e,
+            true
+        );
     }
 
     public function writeProgress($progress)
@@ -179,15 +157,29 @@ class FancyTestdoxPrinter extends ResultPrinter
     public function printResult(TestResult $result)
     {
         $this->printHeader();
+
+        $this->printNonSuccessfulTestsSummary($result->count());
+
         $this->printFooter($result);
     }
 
-    private function colorize(string $text, string $color): string
+    public function printNonSuccessfulTestsSummary(int $numberOfExecutedTests): void
     {
-        if (!$this->colors || !array_key_exists($color, self::ANSI_COLORS)) {
-            return $text;
+        $numberOfNonSuccessfulTests = count($this->nonSuccessfulTestResults);
+        if ($numberOfNonSuccessfulTests === 0) {
+            return;
         }
 
-        return sprintf("\033[%dm%s\033[0m", self::ANSI_COLORS[$color], $text);
+        if (($numberOfNonSuccessfulTests / $numberOfExecutedTests) >= 0.7) {
+            return;
+        }
+
+        $this->write("Summary of non-successful tests:\n\n");
+
+        $previousClassUnderTest = null;
+        foreach ($this->nonSuccessfulTestResults as $testResult) {
+            $this->write($testResult->toString($previousClassUnderTest, $this->verbose));
+            $previousClassUnderTest = $testResult->getClassUnderTest();
+        }
     }
 }
