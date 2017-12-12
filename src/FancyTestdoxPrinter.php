@@ -36,6 +36,11 @@ class FancyTestdoxPrinter extends ResultPrinter
      */
     private $colorizer;
 
+    /**
+     * @var string|null
+     */
+    private $previousClassUnderTest;
+
     public function __construct(
         $out = null,
         $verbose = false,
@@ -52,6 +57,10 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function startTest(Test $test)
     {
+        $this->previousClassUnderTest = $this->currentTestResult
+            ? $this->currentTestResult->getClassUnderTest()
+            : null;
+
         $className = $this->prettifier->prettifyTestClass(get_class($test));
 
         $testName = '';
@@ -61,7 +70,6 @@ class FancyTestdoxPrinter extends ResultPrinter
 
         $this->currentTestResult = new FancyTestResult(
             $this->colorizer,
-            $this->currentTestResult ? $this->currentTestResult->getClassUnderTest() : null,
             $className,
             $testName
         );
@@ -83,7 +91,7 @@ class FancyTestdoxPrinter extends ResultPrinter
             $this->nonSuccessfulTestResults[] = $this->currentTestResult;
         }
 
-        $this->write($this->currentTestResult->toString($this->verbose));
+        $this->write($this->currentTestResult->toString($this->previousClassUnderTest, $this->verbose));
     }
 
     public function addError(Test $test, Exception $e, $time)
@@ -168,8 +176,10 @@ class FancyTestdoxPrinter extends ResultPrinter
 
         $this->write("Summary of non-successful tests:\n\n");
 
+        $previousClassUnderTest = null;
         foreach ($this->nonSuccessfulTestResults as $testResult) {
-            $this->write($testResult->toString($this->verbose));
+            $this->write($testResult->toString($previousClassUnderTest, $this->verbose));
+            $previousClassUnderTest = $testResult->getClassUnderTest();
         }
     }
 }

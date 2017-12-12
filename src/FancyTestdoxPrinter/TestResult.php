@@ -11,11 +11,6 @@ final class TestResult
     private $colorizer;
 
     /**
-     * @var string|null
-     */
-    private $previousClassUnderTest;
-
-    /**
      * @var string
      */
     private $classUnderTest;
@@ -52,12 +47,10 @@ final class TestResult
 
     public function __construct(
         Colorizer $colorizer,
-        $previousClassUnderTest,
         string $classUnderTest,
         string $testMethod
     ) {
         $this->colorizer = $colorizer;
-        $this->previousClassUnderTest = $previousClassUnderTest;
         $this->classUnderTest = $classUnderTest;
         $this->testMethod = $testMethod;
         $this->testSuccesful = true;
@@ -91,11 +84,16 @@ final class TestResult
         $this->runtime = $runtime;
     }
 
-    public function toString($verbose = false)
+    /**
+     * @param string|null $previousClassUnderTest
+     * @param bool $verbose
+     * @return string
+     */
+    public function toString($previousClassUnderTest, $verbose = false): string
     {
         return sprintf(
             "%s %s %s %s\n%s",
-            $this->getClassNameHeader(),
+            $this->getClassNameHeader($previousClassUnderTest),
             $this->symbol,
             $this->testMethod,
             $this->getFormattedRuntime(),
@@ -104,13 +102,14 @@ final class TestResult
     }
 
     /**
+     * @param string|null $previousClassUnderTest
      * @return string
      */
-    public function getClassNameHeader(): string
+    public function getClassNameHeader($previousClassUnderTest): string
     {
         $className = '';
-        if ($this->classUnderTest !== $this->previousClassUnderTest) {
-            if (null !== $this->previousClassUnderTest) {
+        if ($this->classUnderTest !== $previousClassUnderTest) {
+            if (null !== $previousClassUnderTest) {
                 $className = "\n";
             }
             $className .= sprintf("%s\n", $this->classUnderTest);
