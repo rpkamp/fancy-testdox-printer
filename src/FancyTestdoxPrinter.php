@@ -22,6 +22,11 @@ class FancyTestdoxPrinter extends ResultPrinter
     private $currentTestResult;
 
     /**
+     * @var FancyTestResult[]
+     */
+    private $nonSuccessfulTestResults = [];
+
+    /**
      * @var NamePrettifier
      */
     private $prettifier;
@@ -74,12 +79,16 @@ class FancyTestdoxPrinter extends ResultPrinter
 
         $this->currentTestResult->setRuntime($time);
 
+        if (!$this->currentTestResult->isTestSuccessful()) {
+            $this->nonSuccessfulTestResults[] = $this->currentTestResult;
+        }
+
         $this->write($this->currentTestResult->toString($this->verbose));
     }
 
     public function addError(Test $test, Exception $e, $time)
     {
-        $this->currentTestResult->setResult(
+        $this->currentTestResult->fail(
             $this->colorizer->colorize('✘', Colorizer::COLOR_YELLOW),
             (string) $e
         );
@@ -87,7 +96,7 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function addWarning(Test $test, Warning $e, $time)
     {
-        $this->currentTestResult->setResult(
+        $this->currentTestResult->fail(
             $this->colorizer->colorize('✘', Colorizer::COLOR_YELLOW),
             (string) $e
         );
@@ -95,7 +104,7 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function addFailure(Test $test, AssertionFailedError $e, $time)
     {
-        $this->currentTestResult->setResult(
+        $this->currentTestResult->fail(
             $this->colorizer->colorize('✘', Colorizer::COLOR_RED),
             (string) $e
         );
@@ -103,7 +112,7 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function addIncompleteTest(Test $test, Exception $e, $time)
     {
-        $this->currentTestResult->setResult(
+        $this->currentTestResult->fail(
             $this->colorizer->colorize('∅', Colorizer::COLOR_YELLOW),
             (string) $e,
             true
@@ -112,7 +121,7 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function addRiskyTest(Test $test, Exception $e, $time)
     {
-        $this->currentTestResult->setResult(
+        $this->currentTestResult->fail(
             $this->colorizer->colorize('☢', Colorizer::COLOR_YELLOW),
             (string) $e,
             true
@@ -121,7 +130,7 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function addSkippedTest(Test $test, Exception $e, $time)
     {
-        $this->currentTestResult->setResult(
+        $this->currentTestResult->fail(
             $this->colorizer->colorize('→', Colorizer::COLOR_YELLOW),
             (string) $e,
             true
@@ -140,6 +149,27 @@ class FancyTestdoxPrinter extends ResultPrinter
     public function printResult(TestResult $result)
     {
         $this->printHeader();
+
+        $this->printNonSuccessfulTestsSummary($result->count());
+
         $this->printFooter($result);
+    }
+
+    public function printNonSuccessfulTestsSummary(int $numberOfExecutedTests): void
+    {
+        $numberOfNonSuccessfulTests = count($this->nonSuccessfulTestResults);
+        if ($numberOfNonSuccessfulTests === 0) {
+            return;
+        }
+
+        if (($numberOfNonSuccessfulTests / $numberOfExecutedTests) >= 0.7) {
+            return;
+        }
+
+        $this->write("Summary of non-successful tests:\n\n");
+
+        foreach ($this->nonSuccessfulTestResults as $testResult) {
+            $this->write($testResult->toString($this->verbose));
+        }
     }
 }

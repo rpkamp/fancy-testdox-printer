@@ -26,6 +26,11 @@ final class TestResult
     private $testMethod;
 
     /**
+     * @var bool
+     */
+    private $testSuccesful;
+
+    /**
      * @var string
      */
     private $symbol;
@@ -55,6 +60,7 @@ final class TestResult
         $this->previousClassUnderTest = $previousClassUnderTest;
         $this->classUnderTest = $classUnderTest;
         $this->testMethod = $testMethod;
+        $this->testSuccesful = true;
         $this->symbol = $this->colorizer->colorize('✔', Colorizer::COLOR_GREEN);
         $this->additionalInformation = '';
     }
@@ -64,11 +70,17 @@ final class TestResult
         return $this->classUnderTest;
     }
 
-    public function setResult(
+    public function isTestSuccessful(): bool
+    {
+        return $this->testSuccesful;
+    }
+
+    public function fail(
         string $symbol,
         string $additionalInformation,
         bool $additionalInformationVerbose = false
     ): void {
+        $this->testSuccesful = false;
         $this->symbol = $symbol;
         $this->additionalInformation = $additionalInformation;
         $this->additionalInformationVerbose = $additionalInformationVerbose;
