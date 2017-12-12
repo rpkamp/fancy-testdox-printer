@@ -16,8 +16,9 @@ class FancyTestdoxPrinterTest extends TestCase
     {
         $printer = new TestableFancyTestdoxPrinter();
         $printer->startTest($this);
+        $printer->endTest($this, 0);
 
-        $this->assertContains('rpkamp\FancyTestdoxPrinter', $printer->getBuffer());
+        $this->assertStringStartsWith('rpkamp\FancyTestdoxPrinter', $printer->getBuffer());
     }
 
     /**
