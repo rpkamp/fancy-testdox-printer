@@ -85,15 +85,16 @@ final class TestResult
     }
 
     /**
-     * @param string|null $previousClassUnderTest
+     * @param TestResult|null $previousTestResult
      * @param bool $verbose
      * @return string
      */
-    public function toString($previousClassUnderTest, $verbose = false): string
+    public function toString($previousTestResult, $verbose = false): string
     {
-        return sprintf(
-            "%s %s %s %s\n%s",
-            $this->getClassNameHeader($previousClassUnderTest),
+        return \sprintf(
+            "%s%s %s %s %s\n%s",
+            $previousTestResult && $previousTestResult->additionInformationPrintable($verbose) ? "\n" : '',
+            $this->getClassNameHeader($previousTestResult ? $previousTestResult->classUnderTest : null),
             $this->symbol,
             $this->testMethod,
             $this->getFormattedRuntime(),
@@ -105,7 +106,7 @@ final class TestResult
      * @param string|null $previousClassUnderTest
      * @return string
      */
-    public function getClassNameHeader($previousClassUnderTest): string
+    private function getClassNameHeader($previousClassUnderTest): string
     {
         $className = '';
         if ($this->classUnderTest !== $previousClassUnderTest) {
@@ -117,7 +118,7 @@ final class TestResult
         return $className;
     }
 
-    public function getFormattedRuntime(): string
+    private function getFormattedRuntime(): string
     {
         if ($this->runtime > 5) {
             return $this->colorizer->colorize(sprintf('[%.2f ms]', $this->runtime * 1000), Colorizer::COLOR_RED);
@@ -130,13 +131,9 @@ final class TestResult
         return sprintf('[%.2f ms]', $this->runtime * 1000);
     }
 
-    public function getFormattedAdditionalInformation($verbose): string
+    private function getFormattedAdditionalInformation($verbose): string
     {
-        if ($this->additionalInformation === '') {
-            return '';
-        }
-
-        if ($this->additionalInformationVerbose && !$verbose) {
+        if (!$this->additionInformationPrintable($verbose)) {
             return '';
         }
 
@@ -152,5 +149,18 @@ final class TestResult
                 )
             )
         );
+    }
+
+    private function additionInformationPrintable(bool $verbose): bool
+    {
+        if ($this->additionalInformation === '') {
+            return false;
+        }
+
+        if ($this->additionalInformationVerbose && !$verbose) {
+            return false;
+        }
+
+        return true;
     }
 }
