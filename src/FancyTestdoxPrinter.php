@@ -16,6 +16,8 @@ use PHPUnit\Util\TestDox\NamePrettifier;
 
 class FancyTestdoxPrinter extends ResultPrinter
 {
+    public static $phpUnitIntegrationWarningHandled = false;
+
     /**
      * @var FancyTestResult
      */
@@ -53,6 +55,24 @@ class FancyTestdoxPrinter extends ResultPrinter
 
         $this->prettifier = new NamePrettifier();
         $this->colorizer = new Colorizer($this->colors);
+
+        if (!static::$phpUnitIntegrationWarningHandled) {
+            if (!class_exists(\PHPUnit\Util\TestDox\CliTestDoxPrinter::class)) {
+                $warning = <<<WARNING
+ 
+ !!! WARNING !!!
+ rpkamp/fancy-testdox-printer is deprecated as it is part of PHPUnit now.
+ You can remove rpkamp/fancy-testdox-printer and simply run `phpunit --testdox` to
+ obtain the same output.
+ If you are configuring PHPUnit with a printer class you can use the
+ PHPUnit\Util\TestDox\CliTestDoxPrinter class.
+ 
+ 
+WARNING;
+                echo $this->colorizer->colorize($warning, Colorizer::COLOR_YELLOW);
+            }
+            static::$phpUnitIntegrationWarningHandled = true;
+        }
     }
 
     public function startTest(Test $test)
