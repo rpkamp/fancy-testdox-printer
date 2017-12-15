@@ -3,6 +3,7 @@
 namespace rpkamp;
 
 use Exception;
+use PHP_Timer;
 use rpkamp\FancyTestdoxPrinter\Colorizer;
 use rpkamp\FancyTestdoxPrinter\TestResult as FancyTestResult;
 use PHPUnit\Framework\AssertionFailedError;
@@ -22,6 +23,11 @@ class FancyTestdoxPrinter extends ResultPrinter
     private $currentTestResult;
 
     /**
+     * @var FancyTestResult
+     */
+    private $previousTestResult;
+
+    /**
      * @var FancyTestResult[]
      */
     private $nonSuccessfulTestResults = [];
@@ -35,11 +41,6 @@ class FancyTestdoxPrinter extends ResultPrinter
      * @var Colorizer
      */
     private $colorizer;
-
-    /**
-     * @var string|null
-     */
-    private $previousClassUnderTest;
 
     public function __construct(
         $out = null,
@@ -57,21 +58,43 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function startTest(Test $test)
     {
-        $this->previousClassUnderTest = $this->currentTestResult
-            ? $this->currentTestResult->getClassUnderTest()
-            : null;
+        if (!$test instanceof TestCase && !$test instanceof PhptTestCase) {
+            return;
+        }
 
-        $className = $this->prettifier->prettifyTestClass(get_class($test));
+        $class = get_class($test);
+        if ($test instanceof TestCase) {
+            $annotations = $test->getAnnotations();
 
-        $testName = '';
-        if ($test instanceof TestCase || $test instanceof PhptTestCase) {
-            $testName = $this->prettifier->prettifyTestMethod($test->getName());
+            if (isset($annotations['class']['testdox'][0])) {
+                $className = $annotations['class']['testdox'][0];
+            } else {
+                $className = $this->prettifier->prettifyTestClass($class);
+            }
+
+            if (isset($annotations['method']['testdox'][0])) {
+                $testMethod = $annotations['method']['testdox'][0];
+            } else {
+                $testMethod = $this->prettifier->prettifyTestMethod($test->getName(false));
+            }
+
+            $dataDescription = $test->dataDescription();
+            if ($dataDescription) {
+                if (is_int($dataDescription)) {
+                    $testMethod .= sprintf(' with data set #%d', $dataDescription);
+                } else {
+                    $testMethod .= sprintf(' with data set "%s"', $dataDescription);
+                }
+            }
+        } elseif ($test instanceof PhptTestCase) {
+            $className  = $class;
+            $testMethod = $test->getName();
         }
 
         $this->currentTestResult = new FancyTestResult(
             $this->colorizer,
             $className,
-            $testName
+            $testMethod
         );
 
         parent::startTest($test);
@@ -79,19 +102,21 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function endTest(Test $test, $time): void
     {
-        parent::endTest($test, $time);
-        
         if (!$test instanceof TestCase && !$test instanceof PhptTestCase) {
             return;
         }
 
+        parent::endTest($test, $time);
+
         $this->currentTestResult->setRuntime($time);
+
+        $this->write($this->currentTestResult->toString($this->previousTestResult, $this->verbose));
+
+        $this->previousTestResult = $this->currentTestResult;
 
         if (!$this->currentTestResult->isTestSuccessful()) {
             $this->nonSuccessfulTestResults[] = $this->currentTestResult;
         }
-
-        $this->write($this->currentTestResult->toString($this->previousClassUnderTest, $this->verbose));
     }
 
     public function addError(Test $test, Exception $e, $time)
@@ -163,6 +188,11 @@ class FancyTestdoxPrinter extends ResultPrinter
         $this->printFooter($result);
     }
 
+    protected function printHeader(): void
+    {
+        $this->write("\n" . PHP_Timer::resourceUsage() . "\n\n");
+    }
+
     public function printNonSuccessfulTestsSummary(int $numberOfExecutedTests): void
     {
         $numberOfNonSuccessfulTests = count($this->nonSuccessfulTestResults);
@@ -176,10 +206,10 @@ class FancyTestdoxPrinter extends ResultPrinter
 
         $this->write("Summary of non-successful tests:\n\n");
 
-        $previousClassUnderTest = null;
+        $previousTestResult = null;
         foreach ($this->nonSuccessfulTestResults as $testResult) {
-            $this->write($testResult->toString($previousClassUnderTest, $this->verbose));
-            $previousClassUnderTest = $testResult->getClassUnderTest();
+            $this->write($testResult->toString($previousTestResult, $this->verbose));
+            $previousTestResult = $testResult;
         }
     }
 }
