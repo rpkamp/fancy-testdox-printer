@@ -58,7 +58,7 @@ class FancyTestdoxPrinter extends ResultPrinter
         $this->colorizer = new Colorizer($this->colors);
 
         if (!static::$phpUnitIntegrationWarningHandled) {
-            if (!class_exists(\PHPUnit\Util\TestDox\CliTestDoxPrinter::class)) {
+            if (class_exists(\PHPUnit\Util\TestDox\CliTestDoxPrinter::class)) {
                 $warning = <<<WARNING
  
  !!! WARNING !!!
