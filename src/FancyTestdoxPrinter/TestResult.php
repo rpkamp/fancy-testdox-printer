@@ -72,14 +72,14 @@ final class TestResult
         string $symbol,
         string $additionalInformation,
         bool $additionalInformationVerbose = false
-    ): void {
+    ) {
         $this->testSuccesful = false;
         $this->symbol = $symbol;
         $this->additionalInformation = $additionalInformation;
         $this->additionalInformationVerbose = $additionalInformationVerbose;
     }
 
-    public function setRuntime(float $runtime): void
+    public function setRuntime(float $runtime)
     {
         $this->runtime = $runtime;
     }

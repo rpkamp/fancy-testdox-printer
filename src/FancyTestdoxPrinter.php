@@ -120,7 +120,7 @@ WARNING;
         parent::startTest($test);
     }
 
-    public function endTest(Test $test, $time): void
+    public function endTest(Test $test, $time)
     {
         if (!$test instanceof TestCase && !$test instanceof PhptTestCase) {
             return;
@@ -208,12 +208,12 @@ WARNING;
         $this->printFooter($result);
     }
 
-    protected function printHeader(): void
+    protected function printHeader()
     {
         $this->write("\n" . PHP_Timer::resourceUsage() . "\n\n");
     }
 
-    public function printNonSuccessfulTestsSummary(int $numberOfExecutedTests): void
+    public function printNonSuccessfulTestsSummary(int $numberOfExecutedTests)
     {
         $numberOfNonSuccessfulTests = count($this->nonSuccessfulTestResults);
         if ($numberOfNonSuccessfulTests === 0) {
