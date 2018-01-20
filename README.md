@@ -5,6 +5,15 @@ A fancy testdox printer for PHPUnit. Output is similar to PHPUnit's `--testdox` 
 - Tests are more clearly marked as failing/passing by colored<sup>1</sup> symbols
 - Failures/errors etc are shown inline instead of at the end of the test run for more clear and early feedback
 
+## PHPUnit compatibility
+
+This printer is compatible with **PHPUnit 6 only**. PHPUnit 5 support will end very soon, so there are no plans to add support for it in this package.
+
+In **PHPUnit 7** the default testdox printer has been replaced with this printer. Therefore there is no version of this package that supports PHPUnit 7, nor will there ever be, as it is not needed.
+To obtain the same output in PHPUnit 7 run `phpunit --testdox`. If you also want to see the time each test took run `phpunit --testdox -v`.
+
+During the support period for PHPUnit 6, which ends February 2019, this printer will receive support as well, but after that it will be abandoned.
+
 ## Legend
 
 | Symbol | Color | Meaning |
