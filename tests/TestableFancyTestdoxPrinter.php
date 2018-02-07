@@ -6,7 +6,7 @@ class TestableFancyTestdoxPrinter extends FancyTestdoxPrinter
 {
     private $buffer;
 
-    public function write($text)
+    public function write($text): void
     {
         $this->buffer .= $text;
     }
