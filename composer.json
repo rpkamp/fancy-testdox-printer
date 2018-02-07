@@ -12,6 +12,7 @@
         }
     ],
     "require": {
+        "php": "^7.1.0",
         "phpunit/phpunit": "^7.0",
         "phpunit/php-timer": "^2.0"
     },
