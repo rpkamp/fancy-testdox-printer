@@ -2,8 +2,7 @@
 
 namespace rpkamp;
 
-use Exception;
-use PHP_Timer;
+use SebastianBergmann\Timer\Timer;
 use rpkamp\FancyTestdoxPrinter\Colorizer;
 use rpkamp\FancyTestdoxPrinter\TestResult as FancyTestResult;
 use PHPUnit\Framework\AssertionFailedError;
@@ -56,7 +55,7 @@ class FancyTestdoxPrinter extends ResultPrinter
         $this->colorizer = new Colorizer($this->colors);
     }
 
-    public function startTest(Test $test)
+    public function startTest(Test $test): void
     {
         if (!$test instanceof TestCase && !$test instanceof PhptTestCase) {
             return;
@@ -100,7 +99,7 @@ class FancyTestdoxPrinter extends ResultPrinter
         parent::startTest($test);
     }
 
-    public function endTest(Test $test, $time)
+    public function endTest(Test $test, float $time): void
     {
         if (!$test instanceof TestCase && !$test instanceof PhptTestCase) {
             return;
@@ -119,7 +118,15 @@ class FancyTestdoxPrinter extends ResultPrinter
         }
     }
 
-    public function addError(Test $test, Exception $e, $time)
+    public function addError(Test $test, \Throwable $t, float $time): void
+    {
+        $this->currentTestResult->fail(
+            $this->colorizer->colorize('✘', Colorizer::COLOR_YELLOW),
+            (string) $t
+        );
+    }
+
+    public function addWarning(Test $test, Warning $e, float $time): void
     {
         $this->currentTestResult->fail(
             $this->colorizer->colorize('✘', Colorizer::COLOR_YELLOW),
@@ -127,15 +134,7 @@ class FancyTestdoxPrinter extends ResultPrinter
         );
     }
 
-    public function addWarning(Test $test, Warning $e, $time)
-    {
-        $this->currentTestResult->fail(
-            $this->colorizer->colorize('✘', Colorizer::COLOR_YELLOW),
-            (string) $e
-        );
-    }
-
-    public function addFailure(Test $test, AssertionFailedError $e, $time)
+    public function addFailure(Test $test, AssertionFailedError $e, float $time): void
     {
         $this->currentTestResult->fail(
             $this->colorizer->colorize('✘', Colorizer::COLOR_RED),
@@ -143,43 +142,43 @@ class FancyTestdoxPrinter extends ResultPrinter
         );
     }
 
-    public function addIncompleteTest(Test $test, Exception $e, $time)
+    public function addIncompleteTest(Test $test, \Throwable $t, float $time): void
     {
         $this->currentTestResult->fail(
             $this->colorizer->colorize('∅', Colorizer::COLOR_YELLOW),
-            (string) $e,
+            (string) $t,
             true
         );
     }
 
-    public function addRiskyTest(Test $test, Exception $e, $time)
+    public function addRiskyTest(Test $test, \Throwable $t, float $time): void
     {
         $this->currentTestResult->fail(
             $this->colorizer->colorize('☢', Colorizer::COLOR_YELLOW),
-            (string) $e,
+            (string) $t,
             true
         );
     }
 
-    public function addSkippedTest(Test $test, Exception $e, $time)
+    public function addSkippedTest(Test $test, \Throwable $t, float $time): void
     {
         $this->currentTestResult->fail(
             $this->colorizer->colorize('→', Colorizer::COLOR_YELLOW),
-            (string) $e,
+            (string) $t,
             true
         );
     }
 
-    public function writeProgress($progress)
+    public function writeProgress($progress): void
     {
         // NOOP, block normal behavior of \PHPUnit\TextUI\ResultPrinter
     }
 
-    public function flush()
+    public function flush(): void
     {
     }
 
-    public function printResult(TestResult $result)
+    public function printResult(TestResult $result): void
     {
         $this->printHeader();
 
@@ -188,9 +187,9 @@ class FancyTestdoxPrinter extends ResultPrinter
         $this->printFooter($result);
     }
 
-    protected function printHeader()
+    protected function printHeader(): void
     {
-        $this->write("\n" . PHP_Timer::resourceUsage() . "\n\n");
+        $this->write("\n" . Timer::resourceUsage() . "\n\n");
     }
 
     public function printNonSuccessfulTestsSummary(int $numberOfExecutedTests)
