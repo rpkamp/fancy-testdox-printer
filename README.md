@@ -7,6 +7,12 @@ A fancy testdox printer for PHPUnit. Output is similar to PHPUnit's `--testdox` 
 
 ## PHPUnit compatibility
 
+| Major version | Support |
+| --- | --- |
+| PHPUnit 5 | Not supported |
+| PHPUnit 6 | Supported until February 2019 |
+| PHPUnit 7+ | N/A, use built-in `--testdox` option |
+
 This printer is compatible with **PHPUnit 6 only**. PHPUnit 5 support has ended, so there are no plans to add support for it in this package.
 
 In **PHPUnit 7** the default testdox printer has been replaced with this printer. Therefore there is no version of this package that supports PHPUnit 7, nor will there ever be, as it is not needed.
