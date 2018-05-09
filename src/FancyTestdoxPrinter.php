@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestResult;
 use PHPUnit\Framework\Warning;
 use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\TestSuite;
 use PHPUnit\Runner\PhptTestCase;
 use PHPUnit\TextUI\ResultPrinter;
 use PHPUnit\Util\TestDox\NamePrettifier;
@@ -58,7 +59,9 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function startTest(Test $test)
     {
-        if (!$test instanceof TestCase && !$test instanceof PhptTestCase) {
+        if (!$test instanceof TestCase
+            && !$test instanceof TestSuite
+            && !$test instanceof PhptTestCase) {
             return;
         }
 
@@ -89,6 +92,9 @@ class FancyTestdoxPrinter extends ResultPrinter
         } elseif ($test instanceof PhptTestCase) {
             $className  = $class;
             $testMethod = $test->getName();
+        } elseif ($test instanceof TestSuite) {
+            $className = $class;
+            $testMethod = "setUpBeforeClass";
         }
 
         $this->currentTestResult = new FancyTestResult(
@@ -102,7 +108,9 @@ class FancyTestdoxPrinter extends ResultPrinter
 
     public function endTest(Test $test, $time)
     {
-        if (!$test instanceof TestCase && !$test instanceof PhptTestCase) {
+        if (!$test instanceof TestCase
+            && !$test instanceof TestSuite
+            && !$test instanceof PhptTestCase) {
             return;
         }
 
