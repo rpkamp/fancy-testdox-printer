@@ -1,3 +1,5 @@
+# ⛔ This package is deprecated, upgrade to PHPUnit 7+ and use `phpunit --testdox` instead! ⛔
+
 # Fancy Testdox Printer [![Build Status](https://travis-ci.org/rpkamp/fancy-testdox-printer.svg?branch=master)](https://travis-ci.org/rpkamp/fancy-testdox-printer)
 
 A fancy testdox printer for PHPUnit. Output is similar to PHPUnit's `--testdox` output, but:
